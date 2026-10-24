@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "crresnet"
+    },
+    {
+        "ParameterKey": "CrresnetLambdaFunctionName",
+        "ParameterValue": "crresnet-bvv"
+    },
+    {
+        "ParameterKey": "CrresnetImageTag",
+        "ParameterValue": "v0.1.0"
+    }
+]

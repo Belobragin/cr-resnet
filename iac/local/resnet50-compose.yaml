@@ -1,8 +1,8 @@
 services:
   resnet50:
     build:
-      context: .
-      dockerfile: Dockerfile.resnet50
+      context: ../..
+      dockerfile: iac/local/Dockerfile.resnet50
     image: ${IMAGE:-crresnet}
     container_name: ${CONTAINER:-crresnet}
     environment:

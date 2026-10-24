@@ -1,0 +1,10 @@
+[
+    {
+        "ParameterKey": "ProjectName",
+        "ParameterValue": "crresnet"
+    },
+     {
+        "ParameterKey": "RepositoryName",
+        "ParameterValue": "crresnet"
+    }
+]

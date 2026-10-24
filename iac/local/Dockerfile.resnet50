@@ -21,7 +21,7 @@ RUN uv pip install --system --no-cache \
 RUN useradd -m -u 1000 -s /bin/sh ${RESNET_USER}
 
 WORKDIR /resnet
-COPY server.py imagenet_class_index.json ./
+COPY iac/local/server.py imagenet_class_index.json ./
 RUN mkdir -p test-image && chown -R ${RESNET_USER}:${RESNET_USER} /resnet
 
 USER ${RESNET_USER}:${RESNET_USER}

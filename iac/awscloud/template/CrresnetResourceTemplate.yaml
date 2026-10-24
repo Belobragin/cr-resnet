@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "AWS CloudFormation Template to pipeline and build ReAn project"
+Parameters:
+  ProjectName:
+    Description: The name of the project.
+    Type: String
+    Default: crresnet  
+  SchedulerLambdaRetentionPeriod:
+    Description: cloudwatch logs retention period
+    Type: String
+    Default: 30
+  EcrStackName:
+    Description: stack to get ecr repository uri for the lambda container image
+    Type: String
+    Default: crresnet-bvv-ecr
+  WerewolfResourceStackName:
+    Description: stack to get s3 bucket name for all group projects
+    Type: String
+    Default: werewolf-bvv-cf-resource
+
+
+  CrresnetLambdaFunctionName:
+    Description: The name of lambda for crresnet project
+    Type: String
+  CrresnetImageTag:
+    Description: Tag of the Lambda container image in the CrresnetECRRepository, e.g. v0.1.0
+    Type: String
+    
+Resources:
+  CrresnetLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: An execution role for a Lambda function
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CrresnetReadImages
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub
+                  - "arn:aws:s3:::${BucketName}/*"
+                  - BucketName: !ImportValue
+                      Fn::Sub: "${WerewolfResourceStackName}-WerewolfProjectBucketName"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+  
+  CrresnetLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        !Join ["", ["/aws/lambda/", !Ref CrresnetLambdaFunctionName]]
+      RetentionInDays: !Ref SchedulerLambdaRetentionPeriod
+
+  CrresnetLambdaFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: CrresnetLambdaLogGroup
+    Properties:
+      FunctionName: !Ref CrresnetLambdaFunctionName
+      Role: !GetAtt CrresnetLambdaFunctionRole.Arn
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - crresnet-lambda.lambda_handler
+      MemorySize: 3008
+      Timeout: 240
+      Environment:
+        Variables:
+          AllImageFolderS3Bucket: !ImportValue
+            Fn::Sub: "${WerewolfResourceStackName}-WerewolfProjectBucketName"
+          AllImageFolderS3Prefix: storage/
+      Code:
+        ImageUri: !Sub
+          - "${RepoUri}:${CrresnetImageTag}"
+          - RepoUri: !ImportValue
+              Fn::Sub: "${EcrStackName}-RepositoryURI"
+      Description: on lambda http call output is a json prediction array
+
+  # AWS_IAM auth: callers (e.g. the EC2 instance role) sign requests and need lambda:InvokeFunctionUrl
+  CrresnetLambdaFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt CrresnetLambdaFunction.Arn
+      AuthType: AWS_IAM
+  # LambdaVersion:
+  #   Type: AWS::Lambda::Version
+  #   Properties:
+  #     FunctionName: !Ref LambdaRunEC2ScriptFunction
+  #     Description: v1
+  # LambdaActualAlias:
+  #   Type: AWS::Lambda::Alias
+  #   Properties:
+  #     FunctionName: !Ref LambdaRunEC2ScriptFunction
+  #     FunctionVersion: !GetAtt LambdaVersion.Version
+  #     Name: actual
+  
+Outputs:
+  LambdaFunction:
+    Description: Lambda function name
+    Value: !Ref CrresnetLambdaFunction
+  LambdaARN:
+    Description: Lambda ARN
+    Value: !GetAtt CrresnetLambdaFunction.Arn
+  LambdaFunctionUrl:
+    Description: Lambda Function URL, append /api/v1/predict
+    Value: !GetAtt CrresnetLambdaFunctionUrl.FunctionUrl
+  # LambdaVersion:
+  #   Description: Lambda Version Qualifier
+  #   Value: !GetAtt LambdaVersion.Version
