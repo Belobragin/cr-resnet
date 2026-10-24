@@ -1,0 +1,38 @@
+services:
+  resnet50:
+    build:
+      context: .
+      dockerfile: Dockerfile.resnet50
+    image: ${IMAGE:-crresnet}
+    container_name: ${CONTAINER:-crresnet}
+    environment:
+      RESNET_SERVER_PORT: ${RESNET_SERVER_PORT:-8006}
+    ports:
+      - "${RESNET_SERVER_PORT:-8006}:${RESNET_SERVER_PORT:-8006}"
+    volumes:
+      # explicit type: bind avoids a docker-compose bug (docker/compose#12001) where a
+      # source starting with ${VAR} is misclassified as an undeclared named volume
+      - type: bind
+        source: ${PROJECTFOLDER}/${LOCAL_IMAGES_FOLDER}
+        target: /resnet/test-image
+        read_only: true
+      - type: bind
+        source: ${IMAGE_LOCAL_STORAGE}
+        target: /resnet/image
+        read_only: true
+      - type: bind
+        source: ${ADVERSARIAL_LOCAL_STORAGE}
+        target: /resnet/adversarial
+        read_only: true
+      - type: bind
+        source: ${FILTER_LOCAL_STORAGE}
+        target: /resnet/filter
+        read_only: true
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        # Explicit subnet: auto-selection fails when VPN routes (0.0.0.0/1, 128.0.0.0/1) overlap all pools.
+        - subnet: ${CRRESNET_SUBNET:-172.30.1.0/24}

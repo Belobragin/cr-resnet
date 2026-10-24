@@ -1,0 +1,43 @@
+FROM tensorflow/tensorflow:2.21.0 AS baseimage
+
+ARG RESNET_USER=resnet
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.10.9 /uv /usr/local/bin/uv
+
+# tensorflow is already in the base image, so only the server deps are installed
+RUN uv pip install --system --no-cache \
+    fastapi==0.115.0 \
+    uvicorn==0.32.0 \
+    requests==2.34.2 \
+    scikit-image==0.26.0 \
+    scikit-learn==1.9.0 \
+    matplotlib==3.11.1 \
+    opencv-python-headless==5.0.0.93
+
+RUN useradd -m -u 1000 -s /bin/sh ${RESNET_USER}
+
+WORKDIR /resnet
+COPY server.py imagenet_class_index.json ./
+RUN mkdir -p test-image && chown -R ${RESNET_USER}:${RESNET_USER} /resnet
+
+USER ${RESNET_USER}:${RESNET_USER}
+
+ENV TF_CPP_MIN_LOG_LEVEL=3 \
+    KERAS_HOME=/home/${RESNET_USER}/.keras \
+    RESNET_SERVER_PORT=8006
+
+# Keep the pretrained model in the image so the API can start without a first-run download.
+RUN python -c 'from tensorflow.keras.applications import ResNet50; ResNet50(weights="imagenet")'
+
+EXPOSE ${RESNET_SERVER_PORT}
+
+CMD uvicorn server:app --host 0.0.0.0 --port ${RESNET_SERVER_PORT}
+
+
+
+
+

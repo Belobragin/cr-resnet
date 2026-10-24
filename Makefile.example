@@ -1,0 +1,32 @@
+SHELL=/bin/bash
+
+include .env.local
+include makefile-test
+
+HANDLER_NOTATIONS="/app/*"
+
+## ----------------------------------------------------------------------
+## This is a help comment. The purpose of this Makefile is to process 
+## pet project cr-resnet (conteinerised Resnet50).
+## Help comments are displayed in the order defined within the Makefile
+## All comands are initiated with make (command) if not stated otherwise
+## ----------------------------------------------------------------------
+
+help:	## Show this help.
+	@sed -ne '/@sed/!s/## //p' $(MAKEFILE_LIST)
+
+
+.PHONY: resnetstartf
+resnetstartf: ## start-force recreate resnet50 neural net container
+	docker compose --env-file .env.local -f ./resnet50-compose.yaml up --build -d \
+			--force-recreate
+
+.PHONY: resnetstart
+resnetstart: ## start resnet50 neural net container
+	docker compose --env-file .env.local -f ./resnet50-compose.yaml up --build -d
+
+
+.PHONY: resnetstop
+resnetstop: ## stop resnet50 neural net container
+	docker compose --env-file .env.local -f ./resnet50-compose.yaml down
+
