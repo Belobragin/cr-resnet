@@ -1,4 +1,4 @@
-## aker adversarial attack project changelog
+## cr-resnet - conteinerised Resnet50 project changelog
 
 All notable changes to this project will be documented in this file.
 
