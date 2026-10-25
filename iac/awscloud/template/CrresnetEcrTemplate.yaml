@@ -39,12 +39,12 @@ Parameters:
         "rules": [
           {
             "rulePriority": 1,
-            "description": "Keep last 10 images",
+            "description": "Keep last 4 images",
             "selection": {
               "tagStatus": "tagged",
               "tagPrefixList": ["v"],
               "countType": "imageCountMoreThan",
-              "countNumber": 10
+              "countNumber": 4
             },
             "action": {
               "type": "expire"

@@ -12,7 +12,7 @@ import numpy as np
 import skimage.io
 from botocore.exceptions import ClientError
 from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.applications.resnet50 import decode_predictions
+from tensorflow.keras.applications.resnet50 import decode_predictions, preprocess_input
 
 label_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "imagenet_class_index.json")
 RESNET50_INPUT_DIMENSIONS = (224, 224)
@@ -75,10 +75,10 @@ def predict(image_name, folder):
         raise HttpError(400, "invalid image name")
 
     image = load_image(folder, image_name)
-    image = cv2.resize(image, RESNET50_INPUT_DIMENSIONS)
+    image = cv2.resize(image, RESNET50_INPUT_DIMENSIONS, interpolation=cv2.INTER_AREA)
     image = np.expand_dims(image, axis=0)
 
-    predictions = model.predict(image, verbose=0)
+    predictions = model.predict(preprocess_input(image.astype("float32")), verbose=0)
     decoded_predictions = decode_predictions(predictions, top=3)[0]
 
     back_data = {}

@@ -4,11 +4,7 @@
         "ParameterValue": "crresnet"
     },
     {
-        "ParameterKey": "CrresnetLambdaFunctionName",
-        "ParameterValue": "crresnet-bvv"
-    },
-    {
         "ParameterKey": "CrresnetImageTag",
-        "ParameterValue": "v0.1.0"
+        "ParameterValue": "v0.1.1"
     }
 ]

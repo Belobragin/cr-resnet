@@ -8,7 +8,7 @@ import numpy as np
 import skimage.io
 from fastapi import FastAPI, HTTPException
 from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.applications.resnet50 import decode_predictions
+from tensorflow.keras.applications.resnet50 import decode_predictions, preprocess_input
 
 label_path = "imagenet_class_index.json"
 RESNET50_INPUT_DIMENSIONS = (224, 224)
@@ -49,10 +49,10 @@ def predict(image_name: str, folder: str = "test-image"):
         raise HTTPException(status_code=404, detail="image not found")
 
     image = np.array(skimage.io.imread(filename))
-    image = cv2.resize(image, RESNET50_INPUT_DIMENSIONS)
+    image = cv2.resize(image, RESNET50_INPUT_DIMENSIONS, interpolation=cv2.INTER_AREA)
     image = np.expand_dims(image, axis=0)
 
-    predictions = model.predict(image)
+    predictions = model.predict(preprocess_input(image.astype("float32")))
     decoded_predictions = decode_predictions(predictions, top=3)[0]
 
     back_data = {}

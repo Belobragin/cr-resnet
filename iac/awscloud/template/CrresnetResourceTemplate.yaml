@@ -17,14 +17,14 @@ Parameters:
     Description: stack to get s3 bucket name for all group projects
     Type: String
     Default: werewolf-bvv-cf-resource
-
-
   CrresnetLambdaFunctionName:
     Description: The name of lambda for crresnet project
     Type: String
+    Default: crresnet-bvv
   CrresnetImageTag:
     Description: Tag of the Lambda container image in the CrresnetECRRepository, e.g. v0.1.0
     Type: String
+    Default: latest
     
 Resources:
   CrresnetLambdaFunctionRole:
