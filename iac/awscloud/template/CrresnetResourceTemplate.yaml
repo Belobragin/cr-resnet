@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "AWS CloudFormation Template to pipeline and build ReAn project"
+Description: "AWS CloudFormation Template to provide resources for Cr-resnet project"
 Parameters:
   ProjectName:
     Description: The name of the project.
@@ -32,7 +32,6 @@ Resources:
     Properties:
       Description: An execution role for a Lambda function
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: CrresnetReadImages
@@ -45,6 +44,16 @@ Resources:
                   - "arn:aws:s3:::${BucketName}/*"
                   - BucketName: !ImportValue
                       Fn::Sub: "${WerewolfResourceStackName}-WerewolfProjectBucketName"
+              # without it s3 answers 403 instead of 404 for a missing image
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !ImportValue
+                  Fn::Sub: "${WerewolfResourceStackName}-WerewolfProjectBucketArn"
+              # the bucket is encrypted with the werewolf kms key
+              - Effect: Allow
+                Action: kms:Decrypt
+                Resource: !ImportValue
+                  Fn::Sub: "${WerewolfResourceStackName}-WerewolfKmsKeyArn"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -85,7 +94,7 @@ Resources:
               Fn::Sub: "${EcrStackName}-RepositoryURI"
       Description: on lambda http call output is a json prediction array
 
-  # AWS_IAM auth: callers (e.g. the EC2 instance role) sign requests and need lambda:InvokeFunctionUrl
+  # AWS_IAM auth: callers (e.g. the werewolf EC2 instance role) sign requests and need lambda:InvokeFunctionUrl and lambda:InvokeFunction
   CrresnetLambdaFunctionUrl:
     Type: AWS::Lambda::Url
     Properties:
