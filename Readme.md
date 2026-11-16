@@ -24,11 +24,11 @@ This projects container is NOT intended for public exposure. Run it locally behi
 
 ## More verbose product description
 - put your environment variables to .env.example and save it as .env
-- clone the repo and build the container. Run it locally with docker-composer or push it to aws ecr and build aws cloudformation stack to run in the cloud. Follow Makefile.example commands.
+- clone the repo and build the container. Run it locally with the docker-composer or push it to the aws ecr and build aws cloudformation stack to run in the cloud. Follow Makefile.example commands
 - this application is stateless
 
 ## Input request format
-1. serever responds on `/api/v1/predict` endpoint. For local run 3 folders are mounted, defined by environment variables^
+1. serever responds on `/api/v1/predict` endpoint. For local run 3 folders are mounted, defined by environment variables:
     - `IMAGE_LOCAL_STORAGE` as "image"
     - `ADVERSARIAL_LOCAL_STORAGE` as "adversarial"
     - `FILTER_LOCAL_STORAGE` as "filter"
