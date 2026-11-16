@@ -13,10 +13,6 @@ services:
       # explicit type: bind avoids a docker-compose bug (docker/compose#12001) where a
       # source starting with ${VAR} is misclassified as an undeclared named volume
       - type: bind
-        source: ${PROJECTFOLDER}/${LOCAL_IMAGES_FOLDER}
-        target: /resnet/test-image
-        read_only: true
-      - type: bind
         source: ${IMAGE_LOCAL_STORAGE}
         target: /resnet/image
         read_only: true

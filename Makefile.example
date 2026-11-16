@@ -1,0 +1,87 @@
+SHELL=/bin/bash
+
+include .env
+
+HANDLER_NOTATIONS="/app/*"
+
+## ----------------------------------------------------------------------
+## This is a help comment. The purpose of this Makefile is to process 
+## pet project cr-resnet (containerised Resnet50).
+## Help comments are displayed in the order defined within the Makefile
+## All comands are initiated with make (command) if not stated otherwise
+## ----------------------------------------------------------------------
+
+help:	## Show this help.
+	@sed -ne '/@sed/!s/## //p' $(MAKEFILE_LIST)
+
+
+.PHONY: crresnetstartf
+crresnetstartf: ## start-force recreate resnet50 neural net container
+	docker compose --env-file .env -f ./iac/local/resnet50-compose.yaml up --build -d \
+			--force-recreate
+
+.PHONY: crresnetstart
+crresnetstart: ## start resnet50 neural net container
+	docker compose --env-file .env -f ./iac/local/resnet50-compose.yaml up --build -d
+
+
+.PHONY: crresnetstop
+crresnetstop: ## stop resnet50 neural net container
+	docker compose --env-file .env -f ./iac/local/resnet50-compose.yaml down
+
+
+.PHONY: setrepo 
+setrepo:	## create aws ecr repository for crresnet project. This command is run only once
+	@source .env && \
+	aws cloudformation create-stack \
+	--stack-name crresnet-bvv-ecr \
+	--parameters file://iac/awscloud/parameter/crresnet-ecr-parameter.json \
+	--template-body file://iac/awscloud/template/CrresnetEcrTemplate.yaml 
+
+
+.PHONY: setcfresource 
+setcfresource:	## create crresnet project resources with CFN. This command is run only once
+## 
+	@source .env && \
+	aws cloudformation create-stack \
+	--stack-name $$AWS_RESOURCE_CFN_STACK_NAME \
+	--template-body file://iac/awscloud/template/CrresnetResourceTemplate.yaml \
+	--parameters file://iac/awscloud/parameter/crresnet-parameter.json \
+	--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+
+.PHONY: updcfresource
+updcfresource:	## update crresnet project resource with CFN
+## 
+	@source .env && \
+	aws cloudformation update-stack \
+	--stack-name $$AWS_RESOURCE_CFN_STACK_NAME \
+	--template-body file://iac/awscloud/template/CrresnetResourceTemplate.yaml \
+	--parameters file://iac/awscloud/parameter/crresnet-parameter.json \
+	--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+
+.PHONY: delcfresource 
+delcfresource:	## delete crresnet project resources with CFN. This command is run only once
+## 
+	@source .env && \
+	aws cloudformation delete-stack \
+	--stack-name $$AWS_RESOURCE_CFN_STACK_NAME
+
+
+.PHONY: pushtoecr
+pushtoecr:	## build image from iac/awscloud/lambda/Dockerfile.crresnet-lambda and push to ECR as "v<VERSION>" and "latest"
+## 
+	@source .env && \
+	set -euo pipefail && \
+	repo_name=$$(aws cloudformation describe-stack-resources \
+		--stack-name $$AWS_RESOURCE_CFN_ECR_STACK_NAME \
+		--query "StackResources[?ResourceType=='AWS::ECR::Repository'].PhysicalResourceId | [0]" \
+		--output text) && \
+	if [ -z "$$repo_name" ] || [ "$$repo_name" = "None" ]; then \
+		echo "no ECR repository in stack $$AWS_RESOURCE_CFN_ECR_STACK_NAME" >&2; exit 1; \
+	fi && \
+	repo_uri=$$(aws ecr describe-repositories --repository-names $$repo_name \
+		--query 'repositories[0].repositoryUri' --output text) && \
+	aws ecr get-login-password | docker login --username AWS --password-stdin $${repo_uri%%/*} && \
+	docker build --provenance=false -f iac/awscloud/lambda/Dockerfile.crresnet-lambda -t $$repo_uri:v$$VERSION -t $$repo_uri:latest . && \
+	docker push $$repo_uri:v$$VERSION && \
+	docker push $$repo_uri:latest

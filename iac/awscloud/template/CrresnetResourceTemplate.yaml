@@ -22,7 +22,7 @@ Parameters:
     Type: String
     Default: crresnet-bvv
   CrresnetImageTag:
-    Description: Tag of the Lambda container image in the CrresnetECRRepository, e.g. v0.1.0
+    Description: Tag of the Lambda container image in the CrresnetECRRepository, e.g. v1.0.0
     Type: String
     Default: latest
     
@@ -100,17 +100,17 @@ Resources:
     Properties:
       TargetFunctionArn: !GetAtt CrresnetLambdaFunction.Arn
       AuthType: AWS_IAM
-  # LambdaVersion:
-  #   Type: AWS::Lambda::Version
-  #   Properties:
-  #     FunctionName: !Ref LambdaRunEC2ScriptFunction
-  #     Description: v1
-  # LambdaActualAlias:
-  #   Type: AWS::Lambda::Alias
-  #   Properties:
-  #     FunctionName: !Ref LambdaRunEC2ScriptFunction
-  #     FunctionVersion: !GetAtt LambdaVersion.Version
-  #     Name: actual
+  LambdaVersion:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref CrresnetLambdaFunction
+      Description: v1
+  LambdaActualAlias:
+    Type: AWS::Lambda::Alias
+    Properties:
+      FunctionName: !Ref CrresnetLambdaFunction
+      FunctionVersion: !GetAtt LambdaVersion.Version
+      Name: actual
   
 Outputs:
   LambdaFunction:
@@ -122,6 +122,9 @@ Outputs:
   LambdaFunctionUrl:
     Description: Lambda Function URL, append /api/v1/predict
     Value: !GetAtt CrresnetLambdaFunctionUrl.FunctionUrl
-  # LambdaVersion:
-  #   Description: Lambda Version Qualifier
-  #   Value: !GetAtt LambdaVersion.Version
+  LambdaVersion:
+    Description: Lambda Version Qualifier
+    Value: !GetAtt LambdaVersion.Version
+  LambdaActualAlias:
+    Description: Lambda Actual Alias
+    Value: !Ref LambdaActualAlias
